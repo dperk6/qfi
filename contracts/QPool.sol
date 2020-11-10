@@ -24,6 +24,11 @@ contract QPool {
         uint[] memory _amounts,
         address _creator
     ) public {
+        uint256 _total = 0;
+        for (uint256 i = 0; i < _amounts.length; i++) {
+            _total += _amounts[i];
+        }
+        require(_total == 100);
         creator = _creator;
         tokens = _tokens;
         amounts = _amounts;
@@ -32,13 +37,13 @@ contract QPool {
 
     fallback() external payable {
         require(msg.sender == creator);
-        require(msg.value > 200000000000000000);
+        require(msg.data.length == 0);
         processDeposit();
     }
 
     receive() external payable {
         require(msg.sender == creator);
-        require(msg.value > 200000000000000000);
+        require(msg.data.length == 0);
         processDeposit();
     }
 
@@ -48,7 +53,8 @@ contract QPool {
         selfdestruct(msg.sender);
     }
 
-    function processDeposit() internal {
+    function processDeposit() public payable {
+        require(msg.sender == creator);
         require(msg.value > 10000000000000000, "Minimum deposit amount is 0.01 ETH");
         address[] memory _path = new address[](2);
         _path[0] = uniswapRouter.WETH();
@@ -85,6 +91,21 @@ contract QPool {
         }
         emit WithdrawalProcessed(total);
     }
+
+    function totalValue() public view returns (uint256) {
+        uint256 _totalValue = 0;
+        address[] memory _path = new address[](2);
+        for (uint256 i = 0; i < tokens.length && i <= 5; i++) {
+            ERC20 _token = ERC20(tokens[i]);
+            uint256 _totalBalance = _token.balanceOf(address(this));
+            if (_totalBalance == 0) return 0;
+            _path[0] = tokens[i];
+            _path[1] = uniswapRouter.WETH();
+            uint256[] memory _ethValue = uniswapRouter.getAmountsOut(_totalBalance, _path);
+            _totalValue += _ethValue[1];
+        }
+        return _totalValue;
+    }
     
     function withdrawTokens() public {
         require(msg.sender == creator, "Only the creator can withdraw tokens");
@@ -102,4 +123,9 @@ contract QPool {
     function getAmounts() public view returns (uint[] memory) {
         return amounts;
     }
+
+    function isPublic() public view returns (bool _isPublic) {
+        return false;
+    }
+
 }
