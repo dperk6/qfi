@@ -3,8 +3,8 @@
 pragma solidity ^ 0.6.6;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract QPoolPublic is ERC20, ERC20Burnable {
@@ -43,26 +43,26 @@ contract QPoolPublic is ERC20, ERC20Burnable {
             uniswapRouter = IUniswapV2Router02(uniswapFactoryAddress);
         }
     
-    fallback() external payable {
+    fallback() external payable nonReentrant {
         require(msg.data.length == 0);
         processDeposit();
     }
 
-    receive() external payable {
+    receive() external payable nonReentrant {
         require(msg.data.length == 0);
         processDeposit();
     }
 
-    function processDeposit() public payable {
+    function processDeposit() public payable nonReentrant {
         uint256 _newIssuance = calculateShare();
         if (deposits[msg.sender] == 0) addDepositor(msg.sender);
         deposits[msg.sender] = deposits[msg.sender].add(msg.value);
-        _mint(msg.sender, _newIssuance);
         require(makeExchange());
+        _mint(msg.sender, _newIssuance);
         emit DepositProcessed(msg.value);
     }
 
-    function makeExchange() internal returns (bool) {
+    function makeExchange() private returns (bool) {
         address[] memory _path = new address[](2);
         for (uint256 i = 0; i < tokens.length && i<= 5; i++) {
             _path[0] = uniswapRouter.WETH();
@@ -91,7 +91,7 @@ contract QPoolPublic is ERC20, ERC20Burnable {
         return _totalValue;
     }
 
-    function calculateShare() internal view returns (uint256) {
+    function calculateShare() private view returns (uint256) {
         if (totalSupply() == 0) {
             return 1000000000000000000000;
         } else {
@@ -103,7 +103,7 @@ contract QPoolPublic is ERC20, ERC20Burnable {
         }
     }
     
-    function withdrawEth(uint256 _percent) public {
+    function withdrawEth(uint256 _percent) public nonReentrant {
         require(_percent > 0);
         uint256 _userShare = balanceOf(msg.sender);
         uint256 _burnAmount = _userShare.mul(_percent).div(100);
@@ -119,7 +119,7 @@ contract QPoolPublic is ERC20, ERC20Burnable {
         emit WithdrawalProcessed(total);
     }
 
-    function sellTokens(uint256 _poolShare, uint256 _percent) internal returns (bool, uint256) {
+    function sellTokens(uint256 _poolShare, uint256 _percent) private returns (bool, uint256) {
         uint256 total = 0;
         address[] memory _path = new address[](2);
         for (uint256 i = 0; i < tokens.length && i <= 5; i++) {
@@ -139,6 +139,21 @@ contract QPoolPublic is ERC20, ERC20Burnable {
         }
         return (true, total);
     }
+
+    function withdrawTokens(uint256 _percent) public nonReentrant {
+        uint256 _userShare = balanceOf(msg.sender);
+        uint256 _tmp = 100;
+        uint256 _poolShare = _tmp.mul(_userShare).div(totalSupply());
+        _burn(msg.sender, _userShare);
+        removeDepositor(msg.sender);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            ERC20 _token = ERC20(tokens[i]);
+            uint256 _addressBalance = _token.balanceOf(address(this));
+            uint256 _amountOut = _addressBalance.mul(_poolShare).div(100);
+            require(_token.approve(msg.sender, _amountOut));
+            require(_token.transfer(msg.sender, _amountOut));
+        }
+    }
     
     function isDepositor(address _address) public view returns (bool, uint256) {
         for (uint256 i = 0; i < depositors.length; i++) {
@@ -155,12 +170,12 @@ contract QPoolPublic is ERC20, ERC20Burnable {
         return _totalDeposits;
     }
     
-    function addDepositor(address _depositor) internal {
+    function addDepositor(address _depositor) private {
         (bool _isDepositor, ) = isDepositor(_depositor);
         if(!_isDepositor) depositors.push(_depositor);
     }
     
-    function removeDepositor(address _depositor) internal {
+    function removeDepositor(address _depositor) private {
         (bool _isDepositor, uint256 i) = isDepositor(_depositor);
         if (_isDepositor) {
             depositors[i] = depositors[depositors.length - 1];
