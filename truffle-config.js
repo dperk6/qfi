@@ -54,6 +54,13 @@ module.exports = {
       network_id: "*",
       from: "0x8917D4D8A2096aad813069C558e82297Bfea447f",
       gas: 10000000
+    },
+    mainnet: {
+      provider: new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/a763584839364e43bb14fec9299df0ad`),
+      port: 443,
+      network_id: "*",
+      from: "0x8917D4D8A2096aad813069C558e82297Bfea447f",
+      gas: 10000000
     }
     // Another network with more advanced options...
     // advanced: {
