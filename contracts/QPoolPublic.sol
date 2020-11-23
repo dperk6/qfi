@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract QPoolPublic is ERC20, ERC20Burnable {
+contract QPoolPublic is ERC20, ERC20Burnable, ReentrancyGuard {
     using SafeMath for uint256;
 
     string public poolName;
