@@ -3,19 +3,16 @@
 pragma solidity ^ 0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownabled.sol";
-import "./QPoolRewards/sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./QPoolRewards.sol";
 
 contract QPoolStakingFactory is Ownable {
     // immutables
     address public rewardsToken;
     uint public stakingRewardsGenesis;
 
-    // QFactory
-    address public qfactory;
-
     // the staking tokens for which the rewards contract has been deployed
-    address[] public stakingTokens;
+    address[] private stakingTokens;
 
     // info about rewards for a particular staking token
     struct StakingRewardsInfo {
@@ -43,14 +40,21 @@ contract QPoolStakingFactory is Ownable {
     function deploy(address stakingToken, uint rewardAmount) public onlyOwner {
         StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
         require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
-        require(qfactory.isPool(stakingToken), 'StakingRewardsFactory::deploy: not a QPool');
-        info.stakingRewards = address(new StakingRewards(address(this), rewardsToken, stakingToken));
+        info.stakingRewards = address(new QPoolRewards(address(this), rewardsToken, stakingToken));
         info.rewardAmount = rewardAmount;
         stakingTokens.push(stakingToken);
     }
+    
+    ///// view functions
+    
+    // get list of qpool token addresses for staking
+    
+    function getTokens() public view returns (address[] memory) {
+        return stakingTokens;
+    }
 
     ///// permissionless functions
-
+    
     // call notifyRewardAmount for all staking tokens.
     function notifyRewardAmounts() public {
         require(stakingTokens.length > 0, 'StakingRewardsFactory::notifyRewardAmounts: called before any deploys');
@@ -75,7 +79,7 @@ contract QPoolStakingFactory is Ownable {
                 IERC20(rewardsToken).transfer(info.stakingRewards, rewardAmount),
                 'StakingRewardsFactory::notifyRewardAmount: transfer failed'
             );
-            StakingRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
+            QPoolRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
         }
     }
 }
