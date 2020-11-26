@@ -8,7 +8,8 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract QPool {
     using SafeMath for uint256;
-
+    
+    string public poolName;
     address public creator;
     address[] private tokens;
     uint[] private amounts;
