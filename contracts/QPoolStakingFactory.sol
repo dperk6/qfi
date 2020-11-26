@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./QPoolRewards.sol";
 
 contract QPoolStakingFactory is Ownable {
+    using SafeMath for uint256;
     // immutables
     address public rewardsToken;
     uint public stakingRewardsGenesis;
@@ -43,6 +44,12 @@ contract QPoolStakingFactory is Ownable {
         info.stakingRewards = address(new QPoolRewards(address(this), rewardsToken, stakingToken));
         info.rewardAmount = rewardAmount;
         stakingTokens.push(stakingToken);
+    }
+    
+    function updateStakingRewards(address stakingToken, uint rewardAmount) public onlyOwner returns (uint256 newReward) {
+        StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
+        info.rewardAmount = info.rewardAmount.add(rewardAmount);
+        return info.rewardAmount;
     }
     
     ///// view functions
