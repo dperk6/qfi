@@ -119,7 +119,7 @@ contract QPoolPublic is ERC20, ERC20Burnable, ReentrancyGuard {
         emit WithdrawalProcessed(total);
     }
 
-    function sellTokens(uint256 _poolShare, uint256 _percent) private nonReentrant returns (bool, uint256) {
+    function sellTokens(uint256 _poolShare, uint256 _percent) private returns (bool, uint256) {
         uint256 total = 0;
         address[] memory _path = new address[](2);
         for (uint256 i = 0; i < tokens.length && i <= 5; i++) {
