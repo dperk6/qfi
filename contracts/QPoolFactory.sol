@@ -30,9 +30,9 @@ contract QPoolFactory {
         return isPool[_poolAddress];
     }
 
-    function newPool(address[] memory _tokens, uint[] memory _amounts)
+    function newPool(string memory _name, address[] memory _tokens, uint[] memory _amounts)
     public returns (address) {
-        QPool pool = new QPool(_tokens, _amounts, msg.sender);
+        QPool pool = new QPool(_name, _tokens, _amounts, msg.sender);
         emit PoolCreated(pool);
         allPools.push(address(pool));
         privatePools.push(address(pool));

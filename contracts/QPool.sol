@@ -8,9 +8,9 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract QPool {
     using SafeMath for uint256;
-    
-    string public poolName;
+
     address public creator;
+    string public poolName;
     address[] private tokens;
     uint[] private amounts;
     address private uniswapFactoryAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
@@ -21,6 +21,7 @@ contract QPool {
     event WithdrawalProcessed(uint256 amount);
 
     constructor(
+        string memory _poolName,
         address[] memory _tokens,
         uint[] memory _amounts,
         address _creator
@@ -31,6 +32,7 @@ contract QPool {
         }
         require(_total == 100);
         creator = _creator;
+        poolName = _poolName;
         tokens = _tokens;
         amounts = _amounts;
         uniswapRouter = IUniswapV2Router02(uniswapFactoryAddress);
